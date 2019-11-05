@@ -1,0 +1,91 @@
+WRITE
+-----
+0x5B41 - 0101 1011 0100 0001		2 byte
+
+PARAMETERS:
+
+0x0000 - ADDR LO			2 byte
+0x0000 - ADDR HI			2 byte
+
+0x0000 - DATA LEN LO			2 byte
+0x0000 - DATA LEN HI			2 byte
+
++ data
+
+Data len is in pixels (2 bytes per pixel). Data length value to fill is actual data length - 1. Data length of 0 means 1 pixel of data.
+
+
+FRAMEBASE
+------------
+0x5B42 - 0101 1011 0100 0010		2 byte
+
+PARAMETERS:
+
+0x0000 - ADDR LO			2 byte
+0x0000 - ADDR HI			2 byte
+
+
+WRAPLENGTH
+-----------
+0x5B43 - 0101 1011 0100 0011		2 byte
+
+PARAMETERS:
+
+0x0000 - WRAPLENGTH			2 byte
+
+Wrap length value is actual length - 1. Value of 479 means the full screen width. 0 is 1 pixel wide. 1 is 2 pixels wide.
+
+
+
+#define USBD480_SET_STREAM_DECODER	0xC6
+
+// Disable stream decoder
+result = usb_control_msg( usb_handle, 0x40, USBD480_SET_STREAM_DECODER, 0x00, 0, NULL, 0, 500);	
+
+// Enable stream decoder
+result = usb_control_msg( usb_handle, 0x40, USBD480_SET_STREAM_DECODER, 0x06, 0, NULL, 0, 500);	
+
+
+
+
+				int wraplength = 480-1;
+
+				data[0] = 0x43; // wrap length
+				data[1] = 0x5B;
+				data[2] = wraplength;
+				data[3] = wraplength>>8;
+
+				writesize = 4;
+
+				if(result = usb_bulk_write( usb_handle, 0x02, (char*)data, writesize, 500) != writesize)
+						printf("bulk_write error %d\n", result);
+
+
+
+
+			int writeaddress = 0;
+			int writelength = 480*272 - 1;
+
+			data[0] = 0x41; // pixel write
+			data[1] = 0x5B;
+			data[2] = writeaddress;
+			data[3] = writeaddress>>8;
+			data[4] = writeaddress>>16;
+			data[5] = writeaddress>>24;
+			data[6] = writelength;
+			data[7] = writelength>>8;
+			data[8] = writelength>>16;
+			data[9] = writelength>>24;
+
+
+			for(int i=10; i<480*272*2; i++)
+			{
+				data[i] = 0xff;
+			}
+
+			
+
+			writesize = 480*272*2 + 10;
+
+			if(result = usb_bulk_write( udev, 0x02, (char*)data, writesize, 500) != writesize)
+				printf("bulk_write error %d\n", result);
